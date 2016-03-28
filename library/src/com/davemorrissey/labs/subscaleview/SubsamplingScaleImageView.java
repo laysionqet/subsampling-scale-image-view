@@ -2518,7 +2518,7 @@ public class SubsamplingScaleImageView extends View {
         private final float targetScale;
         private final PointF targetSCenter;
         private final PointF vFocus;
-        private long duration = 500;
+        private long duration = 200;
         private int easing = EASE_IN_OUT_QUAD;
         private boolean interruptible = true;
         private boolean panLimited = true;
