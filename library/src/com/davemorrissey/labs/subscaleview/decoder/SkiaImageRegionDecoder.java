@@ -21,8 +21,8 @@ import java.util.List;
  */
 public class SkiaImageRegionDecoder implements ImageRegionDecoder {
 
-    private BitmapRegionDecoder decoder;
-    private final Object decoderLock = new Object();
+    protected BitmapRegionDecoder decoder;
+    protected final Object decoderLock = new Object(); // for subclass
 
     private static final String FILE_PREFIX = "file://";
     private static final String ASSET_PREFIX = FILE_PREFIX + "/android_asset/";
@@ -68,7 +68,7 @@ public class SkiaImageRegionDecoder implements ImageRegionDecoder {
                 decoder = BitmapRegionDecoder.newInstance(inputStream, false);
             } finally {
                 if (inputStream != null) {
-                    try { inputStream.close(); } catch (Exception e) { }
+                    try { inputStream.close(); } catch (Exception ignored) { }
                 }
             }
         }

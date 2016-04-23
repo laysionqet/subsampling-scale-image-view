@@ -422,6 +422,22 @@ public class SubsamplingScaleImageView extends View {
         }
     }
 
+    public final boolean reachLeftEdge() {
+        return null != vTranslate && vTranslate.x >= 0f;
+    }
+
+    public final boolean reachRightEdge() {
+        return null != vTranslate && vTranslate.x <= getWidth() - scale * sWidth();
+    }
+
+    public final void scrollToTop() {
+        if (isReady()) {
+            reset(false);
+            this.sPendingCenter = new PointF(sWidth()/2, 0);
+            invalidate();
+        }
+    }
+
     /**
      * Reset all state before setting/changing image or setting new rotation.
      */
@@ -1691,6 +1707,10 @@ public class SubsamplingScaleImageView extends View {
     }
 
     private void execute(AsyncTask<Void, Void, ?> asyncTask) {
+        if (parallelLoadingEnabled && null != ConfigurationFactory.getAsynTaskExecutor()) {
+            asyncTask.executeOnExecutor(ConfigurationFactory.getAsynTaskExecutor());
+            return;
+        }
         if (parallelLoadingEnabled && VERSION.SDK_INT >= 11) {
             try {
                 Field executorField = AsyncTask.class.getField("THREAD_POOL_EXECUTOR");
@@ -2412,6 +2432,10 @@ public class SubsamplingScaleImageView extends View {
         this.doubleTapZoomScale = doubleTapZoomScale;
     }
 
+    public final float getDoubleTapZoomScale() {
+        return this.doubleTapZoomScale;
+    }
+
     /**
      * A density aware alternative to {@link #setDoubleTapZoomScale(float)}; this allows you to express the scale the
      * image will zoom in to when double tapped in terms of the image pixel density. Values lower than the max scale will
@@ -2694,7 +2718,7 @@ public class SubsamplingScaleImageView extends View {
     /**
      * An event listener, allowing subclasses and activities to be notified of significant events.
      */
-    public static interface OnImageEventListener {
+    public interface OnImageEventListener {
 
         /**
          * Called when the dimensions of the image and view are known, and either a preview image,
