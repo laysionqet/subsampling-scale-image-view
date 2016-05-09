@@ -10,8 +10,11 @@ import android.graphics.Bitmap.Config;
 import android.net.Uri;
 import android.text.TextUtils;
 
+import com.davemorrissey.labs.subscaleview.ConfigurationFactory;
 import java.io.InputStream;
 import java.util.List;
+
+import static com.davemorrissey.labs.subscaleview.ConfigurationFactory.getBitmapPool;
 
 /**
  * Default implementation of {@link com.davemorrissey.labs.subscaleview.decoder.ImageRegionDecoder}
@@ -81,6 +84,7 @@ public class SkiaImageRegionDecoder implements ImageRegionDecoder {
             BitmapFactory.Options options = new BitmapFactory.Options();
             options.inSampleSize = sampleSize;
             options.inPreferredConfig = Config.RGB_565;
+            options.inBitmap = getBitmapPool().get(sRect.width(), sRect.height(), options.inPreferredConfig);
             Bitmap bitmap = decoder.decodeRegion(sRect, options);
             if (bitmap == null) {
                 throw new RuntimeException("Skia image decoder returned null bitmap - image format may not be supported");

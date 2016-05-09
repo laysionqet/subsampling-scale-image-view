@@ -9,8 +9,11 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.text.TextUtils;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+
+import static com.davemorrissey.labs.subscaleview.ConfigurationFactory.getBitmapPool;
 
 /**
  * Default implementation of {@link com.davemorrissey.labs.subscaleview.decoder.ImageDecoder}
@@ -53,18 +56,31 @@ public class SkiaImageDecoder implements ImageDecoder {
                 }
             }
 
+            options.inJustDecodeBounds = true;
+            BitmapFactory.decodeResource(context.getResources(), id, options);
+            options.inJustDecodeBounds = false;
+            if (options.outWidth > 0 && options.outHeight > 0) {
+                options.inBitmap = getBitmapPool().get(options.outWidth, options.outHeight, options.inPreferredConfig);
+            }
             bitmap = BitmapFactory.decodeResource(context.getResources(), id, options);
         } else if (uriString.startsWith(ASSET_PREFIX)) {
             String assetName = uriString.substring(ASSET_PREFIX.length());
-            bitmap = BitmapFactory.decodeStream(context.getAssets().open(assetName), null, options);
+            bitmap = this.decodeStream(context.getAssets().open(assetName), options);
         } else if (uriString.startsWith(FILE_PREFIX)) {
-            bitmap = BitmapFactory.decodeFile(uriString.substring(FILE_PREFIX.length()), options);
+            String filePath = uriString.substring(FILE_PREFIX.length());
+            options.inJustDecodeBounds = true;
+            BitmapFactory.decodeFile(filePath, options);
+            options.inJustDecodeBounds = false;
+            if (options.outWidth > 0 && options.outHeight > 0) {
+                options.inBitmap = getBitmapPool().get(options.outWidth, options.outHeight, options.inPreferredConfig);
+            }
+            bitmap = BitmapFactory.decodeFile(filePath, options);
         } else {
             InputStream inputStream = null;
             try {
                 ContentResolver contentResolver = context.getContentResolver();
                 inputStream = contentResolver.openInputStream(uri);
-                bitmap = BitmapFactory.decodeStream(inputStream, null, options);
+                bitmap = this.decodeStream(inputStream, options);
             } finally {
                 if (inputStream != null) {
                     try { inputStream.close(); } catch (Exception e) { }
@@ -73,6 +89,26 @@ public class SkiaImageDecoder implements ImageDecoder {
         }
         if (bitmap == null) {
             throw new RuntimeException("Skia image region decoder returned null bitmap - image format may not be supported");
+        }
+        return bitmap;
+    }
+
+    private Bitmap decodeStream(InputStream inputStream, BitmapFactory.Options options) throws IOException {
+        Bitmap bitmap = null;
+        if (null != inputStream) {
+            if (inputStream.markSupported()) {
+                options.inJustDecodeBounds = true;
+                inputStream.mark(0);
+                BitmapFactory.decodeStream(inputStream, null, options);
+                inputStream.reset();
+                options.inJustDecodeBounds = false;
+                if (options.outWidth > 0 && options.outHeight > 0) {
+                    options.inBitmap = getBitmapPool().get(options.outWidth, options.outHeight, options.inPreferredConfig);
+                }
+            }
+            bitmap = BitmapFactory.decodeStream(inputStream, null, options);
+        } else {
+            bitmap = null;
         }
         return bitmap;
     }

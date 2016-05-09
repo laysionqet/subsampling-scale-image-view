@@ -1,5 +1,7 @@
 package com.davemorrissey.labs.subscaleview;
 
+import com.davemorrissey.labs.subscaleview.bitmap_recycle.BitmapPool;
+import com.davemorrissey.labs.subscaleview.bitmap_recycle.BitmapPoolDefaultImpl;
 import java.util.concurrent.Executor;
 
 /**
@@ -22,7 +24,30 @@ public final class ConfigurationFactory {
     }
   }
 
-  /* package */ static Executor getAsynTaskExecutor() {
+  /* package */ static Executor getAsyncTaskExecutor() {
     return sExecutor;
+  }
+
+
+  private static volatile BitmapPool sBitmapPool;
+
+  public static void registerBitmapPoolImpl(BitmapPool pool) {
+    if (null == pool) {
+      return;
+    }
+    synchronized (ConfigurationFactory.class) {
+      sBitmapPool = pool;
+    }
+  }
+
+  public static BitmapPool getBitmapPool() {
+    if (null == sBitmapPool) {
+      synchronized (ConfigurationFactory.class) {
+        if (null == sBitmapPool) {
+          sBitmapPool = new BitmapPoolDefaultImpl();
+        }
+      }
+    }
+    return sBitmapPool;
   }
 }

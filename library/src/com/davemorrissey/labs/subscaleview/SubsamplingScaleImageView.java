@@ -64,6 +64,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 
+import static com.davemorrissey.labs.subscaleview.ConfigurationFactory.getBitmapPool;
+
 /**
  * Displays an image subsampled as necessary to avoid loading too much image data into memory. After a pinch to zoom in,
  * a set of image tiles subsampled at higher resolution are loaded and displayed over the base layer. During pinch and
@@ -438,6 +440,15 @@ public class SubsamplingScaleImageView extends View {
         }
     }
 
+    private void recycleBitmap(Bitmap bitmap) {
+        if (null == bitmap || bitmap.isRecycled()) {
+            return;
+        }
+        if (!getBitmapPool().put(bitmap)) {
+            bitmap.recycle();
+        }
+    }
+
     /**
      * Reset all state before setting/changing image or setting new rotation.
      */
@@ -473,7 +484,7 @@ public class SubsamplingScaleImageView extends View {
                 }
             }
             if (bitmap != null && !bitmapIsCached) {
-                bitmap.recycle();
+                recycleBitmap(bitmap);
             }
             sWidth = 0;
             sHeight = 0;
@@ -491,7 +502,7 @@ public class SubsamplingScaleImageView extends View {
                 for (Tile tile : tileMapEntry.getValue()) {
                     tile.visible = false;
                     if (tile.bitmap != null) {
-                        tile.bitmap.recycle();
+                        recycleBitmap(tile.bitmap);
                         tile.bitmap = null;
                     }
                 }
@@ -1172,7 +1183,7 @@ public class SubsamplingScaleImageView extends View {
                 if (tile.sampleSize < sampleSize || (tile.sampleSize > sampleSize && tile.sampleSize != fullImageSampleSize)) {
                     tile.visible = false;
                     if (tile.bitmap != null) {
-                        tile.bitmap.recycle();
+                        recycleBitmap(tile.bitmap);
                         tile.bitmap = null;
                     }
                 }
@@ -1186,7 +1197,7 @@ public class SubsamplingScaleImageView extends View {
                     } else if (tile.sampleSize != fullImageSampleSize) {
                         tile.visible = false;
                         if (tile.bitmap != null) {
-                            tile.bitmap.recycle();
+                            recycleBitmap(tile.bitmap);
                             tile.bitmap = null;
                         }
                     }
@@ -1465,7 +1476,7 @@ public class SubsamplingScaleImageView extends View {
             reset(false);
             if (bitmap != null) {
                 if (!bitmapIsCached) {
-                    bitmap.recycle();
+                    recycleBitmap(bitmap);
                 }
                 bitmap = null;
                 bitmapIsPreview = false;
@@ -1547,7 +1558,7 @@ public class SubsamplingScaleImageView extends View {
         checkImageLoaded();
         if (isBaseLayerReady() && bitmap != null) {
             if (!bitmapIsCached) {
-                bitmap.recycle();
+                recycleBitmap(bitmap);
             }
             bitmap = null;
             bitmapIsPreview = false;
@@ -1620,7 +1631,7 @@ public class SubsamplingScaleImageView extends View {
      */
     private synchronized void onPreviewLoaded(Bitmap previewBitmap) {
         if (bitmap != null || imageLoadedSent) {
-            previewBitmap.recycle();
+            recycleBitmap(previewBitmap);
             return;
         }
         if (pRegion != null) {
@@ -1644,7 +1655,7 @@ public class SubsamplingScaleImageView extends View {
             reset(false);
         }
         if (this.bitmap != null && !this.bitmapIsCached) {
-            this.bitmap.recycle();
+            recycleBitmap(this.bitmap);
         }
         this.bitmapIsPreview = false;
         this.bitmapIsCached = bitmapIsCached;
@@ -1707,8 +1718,8 @@ public class SubsamplingScaleImageView extends View {
     }
 
     private void execute(AsyncTask<Void, Void, ?> asyncTask) {
-        if (parallelLoadingEnabled && null != ConfigurationFactory.getAsynTaskExecutor()) {
-            asyncTask.executeOnExecutor(ConfigurationFactory.getAsynTaskExecutor());
+        if (parallelLoadingEnabled && null != ConfigurationFactory.getAsyncTaskExecutor()) {
+            asyncTask.executeOnExecutor(ConfigurationFactory.getAsyncTaskExecutor());
             return;
         }
         if (parallelLoadingEnabled && VERSION.SDK_INT >= 11) {
