@@ -50,18 +50,27 @@ version = '3.4.1'
 //    }
 //}
 
+def getPropertyOrDefault = {
+    String property, Object fallback ->
+        if (hasProperty(property)) {
+            return getProperty(property)
+        } else {
+            return fallback
+        }
+}
+
 dependencies {
     compile fileTree(dir: 'libs', include: '*.jar')
     compile 'com.android.support:support-annotations:23.2.1'
 }
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion "23.0.2"
+    compileSdkVersion getPropertyOrDefault('compileSdkVersion', 23)
+    buildToolsVersion getPropertyOrDefault('buildToolsVersion', '23.0.2')
 
     defaultConfig {
-        minSdkVersion 14
-        targetSdkVersion 23
+        minSdkVersion getPropertyOrDefault('minSdkVersion', 14)
+        targetSdkVersion getPropertyOrDefault('targetSdkVersion', 23)
     }
 
     sourceSets {
